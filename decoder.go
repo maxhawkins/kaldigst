@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/ziutek/glib"
 	"github.com/ziutek/gst"
@@ -14,10 +15,18 @@ type Decoder struct {
 	decode, convert, sink, resample, asr *gst.Element
 	bus                                  *gst.Bus
 	pipe                                 *gst.Pipeline
+
+	OnEOS             func()
+	OnError           func(err *glib.Error, debug string)
+	OnFullFinalResult func(res FullFinalResult)
 }
 
 func NewDecoder(props Props) (*Decoder, error) {
 	d := &Decoder{}
+
+	d.OnEOS = func() {}
+	d.OnError = func(err *glib.Error, debug string) {}
+	d.OnFullFinalResult = func(res FullFinalResult) {}
 
 	d.src = NewAppSrc("appsrc")
 	if d.src == nil {
@@ -65,46 +74,58 @@ func NewDecoder(props Props) (*Decoder, error) {
 	d.bus.AddSignalWatch()
 
 	d.bus.Connect("message::error", func(bus *gst.Bus, msg *gst.Message) {
-		d.pipe.SetState(gst.STATE_NULL)
+		d.Stop()
+		d.OnError(nil, "")
 	}, nil)
 	d.bus.Connect("message::eos", func(bus *gst.Bus, msg *gst.Message) {
-		d.pipe.SetState(gst.STATE_NULL)
+		d.Stop()
+		d.OnEOS()
+	}, nil)
+
+	d.asr.Connect("full-final-result", func(bus *gst.Bus, data string) {
+		var res FullFinalResult
+		if err := json.Unmarshal([]byte(data), &res); err != nil {
+			d.OnError(nil, err.Error())
+		}
+
+		d.OnFullFinalResult(res)
 	}, nil)
 
 	return d, nil
 }
 
-func (d *Decoder) OnError(f func(err *glib.Error, debug string)) {
-	d.bus.Connect("message::error", func(bus *gst.Bus, msg *gst.Message) {
-		// msg.ParseError() // TODO(maxhawkins): why does this crash?
-		f(nil, "")
-	}, nil)
-}
+func (d *Decoder) Start(caps *gst.Caps, adaptationState string) error {
+	state, _, ret := d.pipe.GetState(int64(time.Second))
+	if ret != gst.STATE_CHANGE_SUCCESS {
+		return fmt.Errorf("start: check pipeline state failed")
+	}
+	if state != gst.STATE_NULL {
+		return fmt.Errorf("start: pipeline not ready (state=%v)", state)
+	}
 
-func (d *Decoder) OnEOS(f func()) {
-	d.bus.Connect("message::eos", func(bus *gst.Bus, msg *gst.Message) {
-		f()
-	}, nil)
-}
-
-func (d *Decoder) Start(caps *gst.Caps) {
 	d.src.SetCaps(caps)
-	d.pipe.SetState(gst.STATE_PLAYING)
+
+	ret = d.pipe.SetState(gst.STATE_PLAYING)
+	if ret == gst.STATE_CHANGE_FAILURE {
+		return fmt.Errorf("start: set playing failed")
+	}
+
+	d.asr.SetProperty("adaptation-state", adaptationState)
+
+	return nil
 }
 
-func (d *Decoder) OnFullFinalResult(f func(FullFinalResult)) {
-	d.asr.Connect("full-final-result", func(bus *gst.Bus, data string) {
-		var res FullFinalResult
-		if err := json.Unmarshal([]byte(data), &res); err != nil {
-			log.Fatal(err)
-		}
+func (d *Decoder) Stop() error {
+	ret := d.pipe.SetState(gst.STATE_NULL)
+	if ret != gst.STATE_CHANGE_SUCCESS {
+		return fmt.Errorf("decoder: set null failed")
+	}
 
-		f(res)
-	}, nil)
+	return nil
 }
 
 func (d *Decoder) CloseWrite() error {
-	return d.src.Close()
+	return d.src.EOS()
 }
 
 func (d *Decoder) Write(b []byte) (int, error) {

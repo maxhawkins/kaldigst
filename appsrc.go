@@ -69,11 +69,12 @@ func (a *AppSrc) SetCaps(caps *gst.Caps) {
 	C.gst_app_src_set_caps(a.g(), (*C.GstCaps)(p))
 }
 
-func (a *AppSrc) Close() error {
+func (a *AppSrc) EOS() error {
 	ret := FlowReturn(C.gst_app_src_end_of_stream(a.g()))
 	if FlowReturn(ret) != GST_FLOW_OK {
-		return fmt.Errorf("close appsrc: %v", ret)
+		return fmt.Errorf("appsrc eos: %v", ret)
 	}
+
 	return nil
 }
 
