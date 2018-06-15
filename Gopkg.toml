@@ -1,0 +1,12 @@
+[[constraint]]
+  branch = "master"
+  name = "github.com/ziutek/glib"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/ziutek/gst"
+
+[prune]
+  non-go = true
+  go-tests = true
+  unused-packages = true
