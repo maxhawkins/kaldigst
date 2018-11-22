@@ -1,0 +1,8 @@
+github.com/ziutek/glib v0.0.0-20141105171902-a43f7a959840 h1:KlAjvC+L41Ki6fICR9D/QjIHpliLGDzn6EbRzOLLlBU=
+github.com/ziutek/glib v0.0.0-20141105171902-a43f7a959840/go.mod h1:szXPhCLKZNso3Tek6TW1XJIZUp9a8Huns4GtRNe/q8U=
+github.com/ziutek/gst v0.0.0-20150316154308-25941d95587d h1:dpl+84aX9ytnqCFowVjoVyPNoKXrpBtI8M/FeIYRTl4=
+github.com/ziutek/gst v0.0.0-20150316154308-25941d95587d/go.mod h1:BGlPFIsTRIBisow/dvw+Et3oisYPJq42nk91kzS840I=
+github.com/ziutek/gst v0.0.0-20171124161405-7d16e692318b h1:TX5KmGfs5zWXeDIzxDURgwUiu/RjWFNYKHU/1G0s29A=
+github.com/ziutek/gst v0.0.0-20171124161405-7d16e692318b/go.mod h1:BGlPFIsTRIBisow/dvw+Et3oisYPJq42nk91kzS840I=
+github.com/ziutek/gst v0.0.0-20180725103650-8b4aba5e72b3 h1:EtZxjMm6AgWmy6ToSLwXTJztF/EpnWx36NjuoTsHO/8=
+github.com/ziutek/gst v0.0.0-20180725103650-8b4aba5e72b3/go.mod h1:BGlPFIsTRIBisow/dvw+Et3oisYPJq42nk91kzS840I=
